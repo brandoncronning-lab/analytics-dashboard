@@ -1,27 +1,27 @@
 <?php
-// Handles database connection and schema setup
+// DB connection and schema initialization
 class Database {
     private $pdo;
 
     public function __construct() {
-        // Defaults for local Laragon/MySQL
+        // Local connection settings
         $host = '127.0.0.1';
         $dbName = 'csv_analytics';
         $username = 'root';
         $password = '';
         
         try {
-            // Connect to server without DB to check/create it
+            // Connect to server to check/create database
             $this->pdo = new PDO("mysql:host=$host", $username, $password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
             $this->pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
             
-            // Connect to specific database
+            // Connect to specific database instance
             $this->pdo = new PDO("mysql:host=$host;dbname=$dbName;charset=utf8mb4", $username, $password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            // Disable emulated prepares to preserve proper numeric bindings for LIMIT/OFFSET
+            // Disable emulated prepares to ensure proper data types
             $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             
             $this->setupDatabase();
@@ -32,7 +32,7 @@ class Database {
     }
 
     private function setupDatabase() {
-        // Track file uploads
+        // Table to track uploaded files
         $query1 = "
             CREATE TABLE IF NOT EXISTS uploads (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,7 +44,7 @@ class Database {
         ";
         $this->pdo->exec($query1);
 
-        // Processed sales rows
+        // Table to store imported sales data
         $query2 = "
             CREATE TABLE IF NOT EXISTS sales_data (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +63,7 @@ class Database {
         ";
         $this->pdo->exec($query2);
 
-        // Index key columns for dashboard performance
+        // Create indexes to optimize query performance
         try { $this->pdo->exec("CREATE INDEX idx_category ON sales_data(category)"); } catch (PDOException $e) {}
         try { $this->pdo->exec("CREATE INDEX idx_region ON sales_data(region)"); } catch (PDOException $e) {}
         try { $this->pdo->exec("CREATE INDEX idx_date ON sales_data(order_date)"); } catch (PDOException $e) {}

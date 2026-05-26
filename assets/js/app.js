@@ -1,25 +1,25 @@
-// Handles dashboard UI interactions, AJAX requests to api.php, and Chart.js graphics
+// Main app logic: AJAX calls, UI controls, and Chart.js setup
 
-// Currency formatter
+// Format number as USD currency
 const formatMoney = (amount) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 };
 
-// Numeric formatting helper
+// Format number with commas
 const formatNumber = (num) => {
     return new Intl.NumberFormat('en-US').format(num);
 };
 
-// Global chart references for redraw instances
+// Chart.js chart instances
 let trendChart, categoryChart, regionChart;
 
-// Dark theme chart styles
+// Global Chart.js styling
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.borderColor = '#334155';
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // UI Elements
+    // DOM Element References
     const fileInput = document.getElementById('csv-file');
     const uploadBtn = document.getElementById('btn-upload');
     const mockBtn = document.getElementById('btn-mock');
@@ -33,36 +33,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardContent = document.getElementById('dashboard-content');
     const searchInput = document.getElementById('search-input');
     
-    // Event bindings
+    // Setup Event Listeners
     
-    // Trigger hidden file selector
+    // Proxy file input click
     uploadBtn.addEventListener('click', () => {
         fileInput.click();
     });
 
-    // Handle file selected event
+    // Handle file upload selection
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         startUpload(file);
     });
 
-    // Generate mock CSV on server and process
+    // Trigger mock CSV generation
     mockBtn.addEventListener('click', async () => {
         mockBtn.innerHTML = '<span class="loader"></span> Generating 50,000 rows...';
         mockBtn.disabled = true;
 
         try {
-            // Call mock generation endpoint
+            // Call mock API
             const response = await fetch('api.php?action=generate_mock&rows=50000');
             const data = await response.json();
             
             if (data.success) {
-                // CSV generated, begin importing chunks
+                // If successful, begin chunk import
                 mockBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Mock Data';
                 mockBtn.disabled = false;
 
-                // Init progress bar
+                // Initialize progress UI
                 showProgress('Importing 50,000 rows into database...', '5%');
                 dashboardContent.classList.add('hidden');
 
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Database truncation
+    // Confirm and trigger database reset
     resetBtn.addEventListener('click', async () => {
         if (confirm("Are you sure you want to delete all data from the database?")) {
             await fetch('api.php?action=reset');
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Search input debounce
+    // Debounce search input to avoid spamming requests
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
     });
 
-    // Progress bar handlers
+    // UI Progress helpers
     function showProgress(text, width) {
         progressContainer.style.display = 'block';
         progressContainer.classList.remove('hidden');
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         progressContainer.classList.add('hidden');
     }
 
-    // Upload CSV file payload
+    // Send CSV file to server
     async function startUpload(file) {
         const formData = new FormData();
         formData.append('csv_file', file);
@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
+                // Start chunk import on success
                 showProgress('Processing CSV data...', '10%');
                 processChunk(data.filepath, data.upload_id, 0, data.total_rows);
             } else {
@@ -142,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Process CSV chunks recursively
+    // Import CSV chunks recursively
     async function processChunk(filepath, uploadId, offset, totalRows) {
         try {
             const response = await fetch(`api.php?action=import_chunk&filepath=${filepath}&upload_id=${uploadId}&offset=${offset}&limit=2000`);
@@ -156,21 +157,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressRows.textContent = `${formatNumber(Math.min(newOffset, totalRows))} / ${formatNumber(totalRows)} rows`;
                 progressText.textContent = `Importing data... ${percent}%`;
 
-                // Request next batch if available
+                // Recurse if more rows remain
                 if (newOffset < totalRows && data.processed > 0) {
-                    // Delay next call slightly for UI rendering loop
+                    // Tiny timeout to let browser UI update
                     setTimeout(() => {
                         processChunk(filepath, uploadId, newOffset, totalRows);
                     }, 50);
                 } else {
-                    // Finished import
+                    // Cleanup and load dashboard
                     progressText.textContent = "Processing Complete!";
                     progressFill.style.width = "100%";
                     
                     setTimeout(() => {
                         hideProgress();
                         fileInput.value = '';
-                        loadDashboard(); // Show the beautiful charts!
+                        loadDashboard();
                     }, 1000);
                 }
             } else {
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Retrieve metrics and refresh graphs
+    // Load analytics data and populate dashboard
     async function loadDashboard() {
         try {
             const response = await fetch('api.php?action=get_analytics');
@@ -194,18 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 dashboardContent.style.display = 'block';
                 dashboardContent.classList.remove('hidden');
 
-                // KPI updates
+                // Render KPIs
                 document.getElementById('kpi-revenue').textContent = formatMoney(data.kpis.total_revenue || 0);
                 document.getElementById('kpi-profit').textContent = formatMoney(data.kpis.total_profit || 0);
                 document.getElementById('kpi-orders').textContent = formatNumber(data.kpis.total_orders || 0);
                 document.getElementById('kpi-margin').textContent = (data.kpis.profit_margin || 0) + '%';
                 
-                // Graph rendering
+                // Draw charts
                 renderTrendChart(data.charts.trend);
                 renderCategoryChart(data.charts.category);
                 renderRegionChart(data.charts.region);
                 
-                // Data table refresh
+                // Load initial data table
                 loadDataTable();
             } else {
                 dashboardContent.style.display = 'none';
@@ -216,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Fetch transaction list
+    // Fetch data table rows
     async function loadDataTable(offset = 0, search = '') {
         try {
             const response = await fetch(`api.php?action=get_data&offset=${offset}&limit=50&search=${encodeURIComponent(search)}`);
@@ -251,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Chart rendering helper functions
+    // Chart creation functions
 
     function renderTrendChart(data) {
         const ctx = document.getElementById('trendChart').getContext('2d');
@@ -327,6 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Check for existing data on load
+    // Initialize dashboard on load
     loadDashboard();
 });

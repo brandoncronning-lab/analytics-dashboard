@@ -1,5 +1,5 @@
 <?php
-// Handles dashboard KPI computations and chart queries
+// Analytical queries for KPIs and charts
 class AnalyticsEngine {
     private $pdo;
 
@@ -7,9 +7,9 @@ class AnalyticsEngine {
         $this->pdo = $dbConnection;
     }
 
-    // Calculate aggregate KPI metrics
+    // Compute main KPI metrics
     public function getKPIs() {
-        // SQL aggregate calculations on the database level
+        // Query summary stats
         $query = "
             SELECT 
                 COUNT(*) as total_orders,
@@ -22,7 +22,7 @@ class AnalyticsEngine {
         $stmt = $this->pdo->query($query);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Calculate Profit Margin: (Profit / Revenue) * 100
+        // Profit margin calculation
         $margin = 0;
         if ($result['total_revenue'] > 0) {
             $margin = ($result['total_profit'] / $result['total_revenue']) * 100;
@@ -32,9 +32,9 @@ class AnalyticsEngine {
         return $result;
     }
 
-    // Get sales trend grouped by month
+    // Get monthly sales trend
     public function getSalesTrend() {
-        // Format date to year-month groupings
+        // Query monthly revenue
         $query = "
             SELECT 
                 DATE_FORMAT(order_date, '%Y-%m') as month,
@@ -49,7 +49,7 @@ class AnalyticsEngine {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get sales volume grouped by category
+    // Get revenue grouped by product category
     public function getSalesByCategory() {
         $query = "
             SELECT 
@@ -64,7 +64,7 @@ class AnalyticsEngine {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Get profits grouped by region
+    // Get total profit grouped by region
     public function getProfitByRegion() {
         $query = "
             SELECT 
@@ -79,23 +79,23 @@ class AnalyticsEngine {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
-    // Fetch paginated and searchable rows for data table
+    // Query transactions with pagination and search filtering
     public function getDataTable($offset = 0, $limit = 50, $search = '') {
-        // The base query
+        // Base query
         $query = "SELECT * FROM sales_data ";
         $params = [];
         
-        // Apply optional search filter
+        // Search filter
         if (!empty($search)) {
             $query .= "WHERE customer_name LIKE ? OR order_id LIKE ? OR product_name LIKE ? ";
             $searchTerm = "%$search%";
             $params = [$searchTerm, $searchTerm, $searchTerm];
         }
         
-        // Pagination sorting and limits
+        // Order and pagination
         $query .= "ORDER BY order_date DESC LIMIT ? OFFSET ?";
         
-        // Bind pagination params
+        // Append limit and offset
         $params[] = (int)$limit;
         $params[] = (int)$offset;
         
@@ -103,7 +103,7 @@ class AnalyticsEngine {
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Get total count for pagination calculations
+        // Query total record count for pagination
         $countQuery = "SELECT COUNT(*) FROM sales_data ";
         if (!empty($search)) {
             $countQuery .= "WHERE customer_name LIKE ? OR order_id LIKE ? OR product_name LIKE ? ";
@@ -120,9 +120,9 @@ class AnalyticsEngine {
         ];
     }
     
-    // Truncate tables to reset system state
+    // Clear data tables
     public function resetDatabase() {
-        // Disable FK checks to allow truncate operations
+        // Disable FK checks to allow truncation
         $this->pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
         $this->pdo->exec("TRUNCATE TABLE sales_data");
         $this->pdo->exec("TRUNCATE TABLE uploads");

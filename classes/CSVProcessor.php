@@ -1,5 +1,5 @@
 <?php
-// Handles CSV reading, mock data generation, and chunk-based SQL imports
+// CSV reader and importer
 class CSVProcessor {
     private $pdo;
 
@@ -7,20 +7,20 @@ class CSVProcessor {
         $this->pdo = $dbConnection;
     }
 
-    // Count lines efficiently without reading whole file into memory
+    // Count lines efficiently using SplFileObject
     public function countLines($filepath) {
         $file = new SplFileObject($filepath, 'r');
-        // Go to the end of the file
+        // Seek to end of file
         $file->seek(PHP_INT_MAX);
-        // Return the line number
+        // Return line count
         return $file->key();
     }
 
-    // Generate mock CSV data file for test imports
+    // Generate random sales data CSV
     public function generateMockCSV($filepath, $numRows) {
         $file = fopen($filepath, 'w');
         
-        // Write the header row
+        // Header columns
         fputcsv($file, ['Order ID', 'Date', 'Customer Name', 'Product Name', 'Category', 'Price', 'Quantity', 'Region', 'Profit']);
 
         $categories = ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Toys'];
@@ -30,9 +30,9 @@ class CSVProcessor {
         for ($i = 1; $i <= $numRows; $i++) {
             $price = rand(10, 500) + (rand(0, 99) / 100);
             $quantity = rand(1, 10);
-            $profit = ($price * $quantity) * (rand(10, 40) / 100); // 10% to 40% profit margin
+            $profit = ($price * $quantity) * (rand(10, 40) / 100);
             
-            // Random date in the past year
+            // Random date within past 365 days
             $timestamp = time() - rand(0, 31536000); 
             
             fputcsv($file, [
@@ -52,7 +52,7 @@ class CSVProcessor {
         return true;
     }
 
-    // Read and import a specific chunk range from the CSV
+    // Import a chunk of CSV rows into the database
     public function importChunk($filepath, $uploadId, $offset, $limit) {
         if (!file_exists($filepath)) {
             throw new Exception("File not found.");
@@ -61,15 +61,15 @@ class CSVProcessor {
         $file = new SplFileObject($filepath, 'r');
         $file->setFlags(SplFileObject::READ_CSV);
         
-        // Skip the header row if we are starting at the very beginning
+        // Skip header on first offset
         if ($offset == 0) {
             $offset = 1; 
         }
 
-        // Jump directly to our starting line
+        // Seek to the start offset
         $file->seek($offset);
 
-        // Use transaction to speed up bulk inserts
+        // Wrap in transaction for faster bulk inserts
         $this->pdo->beginTransaction();
 
         $stmt = $this->pdo->prepare("
@@ -79,13 +79,13 @@ class CSVProcessor {
 
         $rowsProcessed = 0;
         
-        // Read lines up to the limit or EOF
+        // Read until limit or end of file
         while (!$file->eof() && $rowsProcessed < $limit) {
             $row = $file->fgetcsv();
             
-            // Validate basic column count
+            // Validate columns
             if ($row && count($row) >= 9) {
-                // Execute the insert
+                // Execute insert
                 $stmt->execute([
                     $uploadId,
                     $row[0], // Order ID
@@ -102,7 +102,7 @@ class CSVProcessor {
             }
         }
 
-        // Commit inserts
+        // Commit transaction
         $this->pdo->commit();
 
         return $rowsProcessed;
