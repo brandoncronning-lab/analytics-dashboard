@@ -1,0 +1,14 @@
+# Ignore all files in the uploads folder
+uploads/*
+!uploads/.htaccess
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE config
+.vscode/
+.idea/
+data/*.db
+

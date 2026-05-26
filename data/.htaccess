@@ -1,0 +1,2 @@
+# Prevent web access to data files
+Deny from all

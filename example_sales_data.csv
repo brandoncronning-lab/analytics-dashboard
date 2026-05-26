@@ -1,0 +1,16 @@
+Order ID,Date,Customer Name,Product Name,Category,Price,Quantity,Region,Profit
+ORD-000001,2025-01-15,Customer 104,Super Gizmo,Electronics,125.50,2,North America,45.20
+ORD-000002,2025-01-16,Customer 212,Magic Tool,Home & Garden,45.00,5,Europe,22.50
+ORD-000003,2025-01-18,Customer 350,Running Shoes,Sports,85.99,1,Asia,15.00
+ORD-000004,2025-02-01,Customer 104,Smart Watch,Electronics,299.99,1,North America,80.00
+ORD-000005,2025-02-05,Customer 88,Cozy Blanket,Home & Garden,35.00,3,South America,10.50
+ORD-000006,2025-02-14,Customer 401,Widget A,Toys,12.50,10,Europe,25.00
+ORD-000007,2025-03-02,Customer 19,Super Gizmo,Electronics,125.50,1,Asia,22.60
+ORD-000008,2025-03-10,Customer 502,Running Shoes,Sports,85.99,2,North America,30.00
+ORD-000009,2025-04-05,Customer 33,Smart Watch,Electronics,299.99,2,Europe,160.00
+ORD-000010,2025-04-12,Customer 104,Cozy Blanket,Home & Garden,35.00,1,North America,3.50
+ORD-000011,2025-05-01,Customer 91,Widget A,Toys,12.50,5,Africa,12.50
+ORD-000012,2025-05-15,Customer 212,Magic Tool,Home & Garden,45.00,1,Europe,4.50
+ORD-000013,2025-06-03,Customer 401,Smart Watch,Electronics,299.99,1,Europe,80.00
+ORD-000014,2025-06-20,Customer 88,Running Shoes,Sports,85.99,1,South America,15.00
+ORD-000015,2025-07-04,Customer 19,Super Gizmo,Electronics,125.50,3,Asia,67.80
